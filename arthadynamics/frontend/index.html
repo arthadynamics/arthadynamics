@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ArthaDynamics</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body { margin:0; font-family:'Inter', sans-serif; background:#f6f1e9; color:#0f172a; }
+    .header { background:white; padding:12px 28px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; }
+    .brand { display:flex; gap:14px; align-items:center; }
+    .logo { height:64px; }
+    .brand-title { font-size:20px; font-weight:700; }
+    .brand-sub { font-size:12px; color:#64748b; }
+    .nav { display:flex; gap:20px; font-size:13px; }
+    .hero { background:#0f172a; color:white; padding:16px 28px; }
+    .hero-title { font-size:20px; font-weight:700; }
+    .hero-sub { font-size:12px; opacity:0.75; }
+
+    .app { display:grid; grid-template-columns:360px 1fr 240px; gap:24px; padding:18px 24px; }
+
+    .card { background:white; border-radius:18px; padding:20px; box-shadow:0 10px 25px rgba(0,0,0,0.05); margin-bottom:16px; }
+    .input-card { background:#fbfaf8; }
+
+    .section-title {
+      font-size:12px;
+      background:#059669;
+      color:white;
+      padding:6px 12px;
+      border-radius:999px;
+      display:inline-block;
+      margin-bottom:10px;
+    }
+
+    input {
+      width:100%;
+      padding:10px;
+      margin-bottom:10px;
+      border-radius:10px;
+      border:1px solid #e2e8f0;
+    }
+
+    button {
+      width:100%;
+      padding:12px;
+      background:#059669;
+      color:white;
+      border:none;
+      border-radius:10px;
+      font-weight:600;
+      cursor:pointer;
+    }
+
+    .empty-state { text-align:center; padding:40px; color:#64748b; }
+
+    .decision-card {
+      border-left:5px solid #059669;
+      background:linear-gradient(to right,#ecfdf5,#ffffff);
+    }
+
+    .badge {
+      background:#d1fae5;
+      padding:6px 12px;
+      border-radius:999px;
+      font-size:12px;
+      display:inline-block;
+      margin-bottom:10px;
+    }
+
+    .decision-main { font-size:18px; font-weight:600; }
+    .net-outcome { font-size:32px; font-weight:700; margin-top:12px; }
+
+    .positive { color:#059669; }
+    .negative { color:#dc2626; }
+
+    .note { font-size:13px; margin-top:10px; line-height:1.6; color:#475569; }
+
+    .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+
+    .metric {
+      background:#f8fafc;
+      padding:12px;
+      border-radius:12px;
+      text-align:center;
+      font-size:13px;
+    }
+
+    canvas { height:260px!important; }
+
+    .ad-box {
+      background:#f1f5f9;
+      border:1px dashed #cbd5f5;
+      height:260px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:12px;
+    }
+
+    .advisor-card {
+      border-left:5px solid #6366f1;
+      background:linear-gradient(to right,#eef2ff,#ffffff);
+    }
+
+    .footer {
+      background:#0f172a;
+      color:#cbd5f5;
+      padding:16px;
+      text-align:center;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="header">
+  <div class="brand">
+    <img src="logo-transparent-svg.svg" class="logo">
+    <div>
+      <div class="brand-title">ArthaDynamics</div>
+      <div class="brand-sub">Structured Financial Modeling for Real-World Decisions</div>
+    </div>
+  </div>
+  <div class="nav">
+<a href="about.html">About</a>
+<a href="privacy.html">Privacy</a>
+<a href="terms.html">Terms</a>
+<a href="disclaimer.html">Disclaimer</a>
+  </div>
+</div>
+
+<div class="hero">
+  <div class="hero-title">Plan smarter. Save more. Decide better.</div>
+  <div class="hero-sub">Make confident home loan decisions with clarity.</div>
+</div>
+
+<div class="app">
+
+<div class="card input-card">
+  <div class="section-title">Loan Setup</div>
+  <div style="font-size:12px; color:#64748b; margin-bottom:10px;">
+  Calculation Mode: <b>Fixed EMI</b> (tenure adjusts)
+</div>
+  <input id="loanAmount" placeholder="Loan Amount">
+  <input id="annualRate" placeholder="Interest Rate (%)">
+  <input id="tenureMonths" placeholder="Tenure (months)">
+
+  <div class="section-title">Prepayment</div>
+  <input id="prepayMonth" placeholder="Month">
+  <input id="prepayAmount" placeholder="Amount">
+
+  <div class="section-title">Rate Change</div>
+  <input id="rateMonth" placeholder="Month">
+  <input id="newRate" placeholder="New Rate (%)">
+
+  <button onclick="simulateLoan()">Run Simulation</button>
+</div>
+
+<div>
+
+<div id="emptyState" class="card empty-state">
+  Configure your loan and run simulation to see insights.
+</div>
+
+<div id="decisionCard" class="card decision-card" style="display:none;">
+  <div id="strategyBadge" class="badge"></div>
+  <div id="primaryInsight" class="decision-main"></div>
+  <div id="netOutcome" class="net-outcome"></div>
+</div>
+
+<div id="baselineCard" class="card" style="display:none;">
+  <div class="grid" id="baseSummary"></div>
+</div>
+
+<div id="breakdownCard" class="card" style="display:none;">
+  <div id="scenarioInsights"></div>
+  <br>
+  <div id="nonLinear"></div>
+</div>
+
+<div id="advisorCard" class="card advisor-card" style="display:none;">
+  <div class="section-title" style="background:#6366f1;">Recommendation</div>
+  <div id="advisorText" class="note"></div>
+</div>
+
+<div id="chartCard" class="card" style="display:none;">
+  <canvas id="loanChart"></canvas>
+</div>
+
+<div class="card"><div class="ad-box">Sponsored</div></div>
+<div class="card" style="text-align:center; font-size:13px;">
+  Was this helpful?<br><br>
+  Tell me what confused you or what you expected 👇<br><br>
+  <a href="https://forms.gle/h7hvuyXiZ73Yjt7SA" target="_blank" style="color:#059669; font-weight:600;">
+    Give feedback (30 sec)
+  </a>
+</div>
+</div>
+
+<div><div class="ad-box">Sponsored</div></div>
+
+</div>
+
+<div class="footer">© 2026 ArthaDynamics</div>
+
+<script>
+function validateInputs(loanAmount, interestRate, tenureMonths){
+  if(!loanAmount || loanAmount <= 0){
+    return "Enter a valid loan amount";
+  }
+  if(!interestRate || interestRate <= 0 || interestRate > 25){
+    return "Enter a valid interest rate (0–25%)";
+  }
+  if(!tenureMonths || tenureMonths <= 0 || tenureMonths > 600){
+    return "Enter a valid tenure (max 600 months)";
+  }
+  return null;
+}
+
+let chartInstance=null;
+
+function showResults(){
+  emptyState.style.display="none";
+  decisionCard.style.display="block";
+  baselineCard.style.display="block";
+  breakdownCard.style.display="block";
+  chartCard.style.display="block";
+  advisorCard.style.display="block";
+}
+
+function formatINR(val){
+  return new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:0}).format(Math.abs(val));
+}
+
+function getNumber(id){
+  let v = document.getElementById(id).value;
+
+  if(!v) return null;
+
+  // Remove commas (Indian & international formats)
+  v = v.replace(/,/g, '');
+
+  // Remove percentage symbol
+  v = v.replace(/%/g, '');
+
+  // Trim spaces
+  v = v.trim();
+
+  // Convert to number
+  const num = Number(v);
+
+  return isNaN(num) ? null : num;
+}
+
+function impactText(val){
+  if(val>0) return `<span class="positive">Saved ${formatINR(val)}</span>`;
+  if(val<0) return `<span class="negative">Extra cost ${formatINR(val)}</span>`;
+  return "No impact";
+}
+
+async function simulateLoan(){
+
+  const btn = document.querySelector("button[onclick='simulateLoan()']");
+
+  btn.disabled = true;
+  btn.innerText = "Simulating...";
+
+  const loanAmount=getNumber("loanAmount");
+const interestRate=getNumber("annualRate");
+const tenureMonths=getNumber("tenureMonths");
+
+// ✅ MOVED UP (important)
+const prepayMonth=getNumber("prepayMonth");
+const prepayAmount=getNumber("prepayAmount");
+const rateMonth=getNumber("rateMonth");
+const newRate=getNumber("newRate");
+
+// ✅ EXISTING VALIDATION
+const error = validateInputs(loanAmount, interestRate, tenureMonths);
+if(error){
+  alert(error);
+  btn.disabled = false;
+  btn.innerText = "Run Simulation";
+  return;
+}
+
+// ✅ NEW VALIDATION (added)
+if(prepayMonth !== null && (prepayMonth <= 0 || prepayMonth > tenureMonths)){
+  alert("Prepayment month must be within tenure");
+  btn.disabled = false;
+  btn.innerText = "Run Simulation";
+  return;
+}
+
+if(rateMonth !== null && (rateMonth <= 0 || rateMonth > tenureMonths)){
+  alert("Rate change month must be within tenure");
+  btn.disabled = false;
+  btn.innerText = "Run Simulation";
+  return;
+}
+// ✅ NEW: Prepayment amount required if month entered
+if(prepayMonth !== null && prepayAmount === null){
+  alert("Enter prepayment amount");
+  btn.disabled = false;
+  btn.innerText = "Run Simulation";
+  return;
+}
+
+// ✅ NEW: New rate required if rate month entered
+if(rateMonth !== null && newRate === null){
+  alert("Enter new rate");
+  btn.disabled = false;
+  btn.innerText = "Run Simulation";
+  return;
+}
+// 👇 keep this AFTER validation
+showResults();
+
+  const hasPre = prepayMonth !== null && prepayAmount !== null;
+const hasRate = rateMonth !== null && newRate !== null;
+
+  try {
+
+  const base=await fetchData({loanAmount,interestRate,tenureMonths});
+
+  let pre=base;
+  if(hasPre){
+    pre=await fetchData({loanAmount,interestRate,tenureMonths,
+      events:[{month:prepayMonth,amount:prepayAmount}]});
+  }
+
+  let rateData=base;
+  if(hasRate){
+    rateData=await fetchData({loanAmount,interestRate,tenureMonths,
+      rateEvents:[{month:rateMonth,newRate:newRate}]});
+  }
+
+  let combined=base;
+  if(hasPre||hasRate){
+    combined=await fetchData({
+      loanAmount,interestRate,tenureMonths,
+      events:hasPre?[{month:prepayMonth,amount:prepayAmount}]:[],
+      rateEvents:hasRate?[{month:rateMonth,newRate:newRate}]:[]
+    });
+  }
+
+  const baseInt=base.totalInterest;
+  const preImpact=baseInt-pre.totalInterest;
+  const rateImpact=baseInt-rateData.totalInterest;
+  const combinedImpact=baseInt-combined.totalInterest;
+
+  const expectedLinear = preImpact + rateImpact;
+  const interactionEffect = combinedImpact - expectedLinear;
+  const absEffect = Math.abs(interactionEffect);
+  const rawPercent = baseInt ? ((combinedImpact / baseInt) * 100) : 0;
+const impactPercent = Math.abs(rawPercent).toFixed(1);
+
+  const isIncrease=hasRate&&newRate>interestRate;
+  const isDecrease=hasRate&&newRate<interestRate;
+
+  // ===== STRATEGY =====
+  let strategy="",insight="";
+
+  if(hasPre&&hasRate){
+    if(prepayMonth<rateMonth&&isIncrease){
+      strategy="Smart Hedging";
+      insight="You prepaid before the rate increase, reducing exposure.";
+    } 
+    else if(prepayMonth>rateMonth&&isIncrease){
+      strategy="Missed Protection";
+      insight="Rate increased before prepayment, increasing cost.";
+    } 
+    else if(prepayMonth>rateMonth&&isDecrease){
+      strategy="Accelerated Gain";
+      insight="You captured the lower rate before reducing principal.";
+    } 
+    else if(prepayMonth<rateMonth&&isDecrease){
+      strategy="Missed Opportunity";
+      insight="Prepayment occurred before rate drop, reducing benefit.";
+    } 
+    else {
+      strategy="Timing Effect";
+      insight="Sequence influenced outcome.";
+    }
+  } 
+  else if(hasPre){
+    strategy="Prepayment Strategy";
+    insight="You reduced principal early.";
+  } 
+  else if(hasRate){
+    strategy="Rate Impact";
+    insight=isIncrease?"Rate increased cost":"Rate reduced cost";
+  }
+
+  const netClass=combinedImpact>=0?"positive":"negative";
+  const netText=combinedImpact>=0?`Saved ${formatINR(combinedImpact)}`:`Extra cost ${formatINR(combinedImpact)}`;
+
+  strategyBadge.innerText=strategy;
+  primaryInsight.innerText=insight;
+  netOutcome.innerHTML=`<span class="${netClass}">${netText}</span>`;
+
+  // ===== INTERACTION LABEL =====
+  let interactionTitle="";
+  let interactionText="";
+
+  if (combinedImpact < 0 && interactionEffect > 0) {
+    interactionTitle="Damage Reduction";
+    interactionText=`Your actions reduced the impact by ${formatINR(absEffect)}.`;
+  } 
+  else if (combinedImpact > 0 && interactionEffect < 0) {
+    interactionTitle="Reduced Benefit";
+    interactionText=`The timing slightly reduced the potential benefit by ${formatINR(absEffect)}.`;
+  } 
+  else if (interactionEffect > 0) {
+    interactionTitle="Positive Interaction";
+    interactionText=`Your strategy improved the outcome by ${formatINR(absEffect)}.`;
+  } 
+  else {
+    interactionTitle="Neutral Interaction";
+    interactionText=`No significant interaction effect.`;
+  }
+
+  nonLinear.innerHTML = `
+    <b>${interactionTitle}</b><br><br>
+    Expected: ${impactText(expectedLinear)}<br>
+    Actual: ${impactText(combinedImpact)}<br><br>
+    ${interactionText}
+  `;
+
+  // ===== BASELINE =====
+  // ✅ Determine which scenario to display tenure from
+// ===== BASELINE =====
+
+// ✅ Determine which scenario to display tenure from
+let displayData = base;
+
+if(hasPre && hasRate){
+  displayData = combined;
+} else if(hasPre){
+  displayData = pre;
+} else if(hasRate){
+  displayData = rateData;
+}
+
+// ✅ Calculate tenure comparison
+const baseTenure = base.finalTenure;
+const newTenure = displayData.finalTenure;
+const diff = baseTenure - newTenure;
+
+let tenureHTML = "";
+
+if(diff === 0){
+  tenureHTML = `<b>${baseTenure} months</b>`;
+} 
+else if(diff > 0){
+  tenureHTML = `<b>${baseTenure} → ${newTenure} months</b><br>
+                <span class="positive">Saved ${diff} months</span>`;
+} 
+else {
+  tenureHTML = `<b>${baseTenure} → ${newTenure} months</b><br>
+                <span class="negative">Extended by ${Math.abs(diff)} months</span>`;
+}
+
+// ✅ Render baseline + comparison
+baseSummary.innerHTML=`
+  <div class="metric">
+    Monthly EMI<br><b>${formatINR(base.amortization[0].emi)}</b>
+  </div>
+  <div class="metric">
+    Total Interest (if unchanged)<br><b>${formatINR(base.totalInterest)}</b>
+  </div>
+  <div class="metric">
+    Loan Duration<br>${tenureHTML}
+  </div>
+  <div class="metric" style="grid-column: span 4; text-align:left;">
+    You would pay approximately <b>${formatINR(base.totalInterest)}</b> in interest over the full tenure if no changes are made.
+  </div>
+`;
+
+
+  // ===== RECOMMENDATION =====
+  // ===== RECOMMENDATION =====
+let advisorHTML="";
+
+if(hasPre && hasRate){
+
+  const directionText = combinedImpact >= 0 ? "reduction" : "increase";
+
+  if(isIncrease){
+    if(prepayMonth < rateMonth){
+      advisorHTML=`Because you prepaid before the rate increase in Month ${rateMonth}, a smaller portion of your loan was exposed to the higher ${newRate}% rate.<br><br>
+      This helped avoid roughly <b>${formatINR(absEffect)}</b> of additional cost.<br><br>
+      That’s about <b>${impactPercent}% ${directionText}</b> in your total interest cost.`;
+    } else {
+      advisorHTML=`Your prepayment occurred after the rate increase in Month ${rateMonth}, exposing more of your loan to the higher ${newRate}% rate.<br><br>
+      Shifting it earlier could improve outcomes by about <b>${formatINR(absEffect)}</b>.<br><br>
+      That’s about <b>${impactPercent}% ${directionText}</b> in your total interest cost.`;
+    }
+  }
+
+  if(isDecrease){
+    if(prepayMonth > rateMonth){
+      advisorHTML=`You allowed the rate to decrease in Month ${rateMonth} before prepaying, which helped reduce interest.<br><br>
+      Adjusting timing further could influence outcomes by about <b>${formatINR(absEffect)}</b>.<br><br>
+      That’s about <b>${impactPercent}% ${directionText}</b> in your total interest cost.`;
+    } else {
+      advisorHTML=`Your prepayment occurred before the rate drop in Month ${rateMonth}, limiting benefit from the lower ${newRate}% rate.<br><br>
+      Delaying it could improve outcomes by about <b>${formatINR(absEffect)}</b>.<br><br>
+      That’s about <b>${impactPercent}% ${directionText}</b> in your total interest cost.`;
+    }
+  }
+
+} 
+else if(hasPre){
+  advisorHTML=`You reduced your loan principal early, lowering total interest.<br><br>
+  This results in savings of about <b>${formatINR(combinedImpact)}</b>.<br><br>
+  That’s about <b>${impactPercent}% reduction</b> in your total interest cost.`;
+} 
+else if(hasRate){
+
+  const directionText = combinedImpact >= 0 ? "reduction" : "increase";
+
+  advisorHTML=`The rate change in Month ${rateMonth} affects overall borrowing cost.<br><br>
+  This results in a change of about <b>${formatINR(Math.abs(combinedImpact))}</b>.<br><br>
+  That’s about <b>${impactPercent}% ${directionText}</b> in your total interest cost.`;
+}
+
+advisorText.innerHTML = advisorHTML;
+
+  scenarioInsights.innerHTML=`
+    Prepayment: ${impactText(preImpact)}<br>
+    Rate: ${impactText(rateImpact)}<br>
+    Combined: ${impactText(combinedImpact)}
+  `;
+
+  renderChart(base,pre,rateData,combined);
+
+} catch(e){
+  alert("Simulation failed. Please check inputs or try again.");
+  console.error(e);
+}
+
+// ✅ ALWAYS RESET BUTTON
+btn.disabled = false;
+btn.innerText = "Run Simulation";
+
+}
+
+function renderChart(base,pre,rateData,combined){
+  const ctx=document.getElementById("loanChart").getContext("2d");
+  if(chartInstance) chartInstance.destroy();
+
+  const gradient=ctx.createLinearGradient(0,0,0,300);
+  gradient.addColorStop(0,"rgba(5,150,105,0.35)");
+  gradient.addColorStop(1,"rgba(5,150,105,0)");
+
+  chartInstance=new Chart(ctx,{
+    type:"line",
+    data:{
+      labels:base.amortization.map((_,i)=>i+1),
+      datasets:[
+        {label:"Base",data:base.amortization.map(x=>x.balance),borderColor:"#94a3b8",tension:0.4,pointRadius:0},
+        {label:"Prepayment",data:pre.amortization.map(x=>x.balance),borderColor:"#f43f5e",tension:0.4,pointRadius:0},
+        {label:"Rate Change",data:rateData.amortization.map(x=>x.balance),borderColor:"#fb923c",tension:0.4,pointRadius:0},
+        {label:"Combined",data:combined.amortization.map(x=>x.balance),borderColor:"#059669",backgroundColor:gradient,fill:true,tension:0.4,pointRadius:0,borderWidth:3}
+      ]
+    }
+  });
+}
+
+async function fetchData(payload){
+  const res=await fetch("http://localhost:3000/simulate",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(payload)
+  });
+  const data = await res.json();
+
+if(!data || !data.totalInterest){
+  throw new Error("Invalid response from server");
+}
+
+return data;
+}
+
+</script>
+
+</body>
+</html>
