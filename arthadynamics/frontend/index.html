@@ -570,7 +570,7 @@ function renderChart(base,pre,rateData,combined){
 }
 
 async function fetchData(payload){
-  const res=await fetch("http://localhost:3000/simulate",{
+  const res=await fetch("https://arthadynamics-backend.onrender.com/simulate",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify(payload)

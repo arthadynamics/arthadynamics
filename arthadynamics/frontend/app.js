@@ -4,24 +4,21 @@ async function simulate() {
   const tenureMonths = Number(document.getElementById("tenureMonths").value);
 
   try {
-    const response = await fetch("http://localhost:3000/simulate", {
+    const response = await fetch("https://arthadynamics-backend.onrender.com/simulate", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
         loanAmount,
-        annualRate,
+        interestRate: annualRate,
         tenureMonths
       })
     });
 
     const data = await response.json();
 
-    if (!data.success) {
-      alert(data.errors.join(", "));
-      return;
-    }
+    // ❌ REMOVE success check (backend doesn't send it)
 
     // Show results
     document.getElementById("results").style.display = "block";
@@ -35,7 +32,6 @@ async function simulate() {
     const percent = data.insights.totalInterestPercent.toFixed(2);
     document.getElementById("interestPercent").innerText = percent;
 
-    // Insight message
     const warning = document.getElementById("warning");
 
     if (percent > 100) {
