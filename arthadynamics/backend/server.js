@@ -23,14 +23,20 @@ app.get('/', (req, res) => {
 app.post('/simulate', (req, res) => {
   try {
     const input = req.body;
+if (!input.loanAmount || !input.interestRate || !input.tenureMonths) {
+  return res.status(400).json({ error: "Missing required inputs" });
+}
+
+    // ✅ SAFE SUPPORT FOR BOTH INPUT TYPES
+    const rawPrepayments = input.events || input.prepaymentEvents || [];
 
     const config = {
       principal: Number(input.loanAmount),
       annualRate: Number(input.interestRate),
       tenureMonths: Number(input.tenureMonths),
-      mode: "FIXED_EMI",
+      mode: input.mode || "FIXED_EMI",
 
-      prepaymentEvents: (input.events || []).map(e => ({
+      prepaymentEvents: rawPrepayments.map(e => ({
         month: Number(e.month),
         amount: Number(e.amount)
       })),
