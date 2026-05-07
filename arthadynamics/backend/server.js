@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const morgan = require('morgan');
 
 // IMPORTANT: Ensure this path matches your deployed folder structure
 const { simulateLoan } = require('./engine/simulator');
@@ -9,6 +10,7 @@ const { simulateLoan } = require('./engine/simulator');
 const app = express();
 
 // Middleware
+app.use(morgan('combined'));
 app.use(helmet());
 
 // Rate limiter: 30 requests/min/IP on /simulate (Decision #3)
