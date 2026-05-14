@@ -51,6 +51,10 @@ app.get('/', (req, res) => {
   res.send('ArthaDynamics Backend Running 🚀');
 });
 
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
+
 // Simulation API
 app.post('/simulate', simulateLimiter, (req, res) => {
   req.setTimeout(15000);
